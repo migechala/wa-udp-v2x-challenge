@@ -39,12 +39,29 @@ def now_ms() -> int:
 
 def euclidean_dist_to_origin(pos) -> float:
     # TODO: validate pos is [x,y] of numbers; compute distance
-    return 0.0  # TODO
+    # if not valid, return 0.0
+
+    if not isinstance(pos, list) or len(pos) != 2: # Check that the pos is valid aka has two elements and is a list
+        return float('inf') # If not valid return infinity so it is never the nearest neighbor
+    x, y = pos
+    if not (isinstance(x, (int, float)) and isinstance(y, (int, float))): # Check that both x and y are numbers
+        return float('inf') # If not valid return infinity so it is never the nearest neighbor
+    return float(math.hypot(x, y)) # Just return the hypotenuse which is the distance to the origin
 
 def nearest_neighbor(neighbors: Dict[str, Dict[str, Any]]) -> Optional[Tuple[str, float]]:
     # neighbors[id] -> {"pos":[x,y], "speed": float, "last_ts": int}
     # TODO: iterate neighbors, compute min distance, return (id, dist) or None
-    return None  # TODO
+    min_dist = float('inf')
+    nearest_id = None
+    for neighbor_id, data in neighbors.items(): 
+        pos = data.get("pos") 
+        dist = euclidean_dist_to_origin(pos) # Get the distance to the neighbor from the origin which is presumably the car
+        if dist < min_dist:
+            min_dist = dist
+            nearest_id = neighbor_id
+    if nearest_id is not None:
+        return (nearest_id, min_dist) # Return the nearest neighbor id and its distance
+    return None # If no neighbors return None
 
 def main() -> int:
     neighbors: Dict[str, Dict[str, Any]] = {}
@@ -72,8 +89,17 @@ def main() -> int:
             #hint: beacon handling, check each message and store in neighbors, try to cover edge cases
             # try to avoid changing anything in the main function outside this TODO block
 
-            
-
+            if not isinstance(msg, dict): # Basically just check if msg, this is a bit redundant because we check if an exception is made but hey better safe than sorry you never know with python
+                continue
+            required_keys = {"id": str, "pos": list, "speed": (int, float), "ts": int}
+            valid = True
+            for key, expected_type in required_keys.items():
+                if key not in msg or not isinstance(msg[key], expected_type): # Check if key exists and if it is the correct type
+                    valid = False
+                    break
+            if not valid:
+                continue # Skip to next message if the current msg is not valid
+            neighbors[msg["id"]] = {"pos": msg["pos"], "speed": float(msg["speed"]), "last_ts": int(msg["ts"])}
 
 
             #END of TODO block
